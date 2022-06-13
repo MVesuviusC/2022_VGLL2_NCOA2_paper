@@ -1,0 +1,78 @@
+sample	group	description	bioproject	Age	AvgSpotLen	Instrument	LibraryLayout	sex	strain	tissue	library_prep	disease_site
+SRR11548481	MmSkMu	"Mm,Quadriceps,female"	PRJNA625451	8 weeks	252	Illumina HiSeq 2500	PAIRED	female	FVB/N	Quadriceps	TruSeq Stranded mRNA Library Prep Kit	
+SRR11548482	MmSkMu	"Mm,Quadriceps,female"	PRJNA625451	8 weeks	252	Illumina HiSeq 2500	PAIRED	female	FVB/N	Quadriceps	TruSeq Stranded mRNA Library Prep Kit	
+SRR11548485	MmSkMu	"Mm,Quadriceps,male"	PRJNA625451	10 weeks	252	Illumina HiSeq 2500	PAIRED	male	FVB/N	Quadriceps	TruSeq Stranded mRNA Library Prep Kit	
+SRR11548486	MmSkMu	"Mm,Quadriceps,male"	PRJNA625451	10 weeks	252	Illumina HiSeq 2500	PAIRED	male	FVB/N	Quadriceps	TruSeq Stranded mRNA Library Prep Kit	
+SRR11148753	MmSkMu	"Mm,Quadriceps,male"	PRJNA608179	13 weeks	302	Illumina HiSeq 4000	PAIRED	male	C57BL/6J	Quadriceps	TruSeq stranded mRNA protocol	
+SRR11148754	MmSkMu	"Mm,Quadriceps,male"	PRJNA608179	13 weeks	302	Illumina HiSeq 4000	PAIRED	male	C57BL/6J	Quadriceps	TruSeq stranded mRNA protocol	
+SRR11148755	MmSkMu	"Mm,Quadriceps,male"	PRJNA608179	13 weeks	302	Illumina HiSeq 4000	PAIRED	male	C57BL/6J	Quadriceps	TruSeq stranded mRNA protocol	
+SRR11148756	MmSkMu	"Mm,Quadriceps,male"	PRJNA608179	13 weeks	302	Illumina HiSeq 4000	PAIRED	male	C57BL/6J	Quadriceps	TruSeq stranded mRNA protocol	
+SRR18474146	MmSkMu	"Mm,skeletalmuscle,male"	PRJNA819493	36 weeks	150	Illumina MiSeq	PAIRED	male	NA	skeletalmuscle	NA	
+SRR18474147	MmSkMu	"Mm,skeletalmuscle,male"	PRJNA819493	36 weeks	150	Illumina MiSeq	PAIRED	male	NA	skeletalmuscle	NA	
+SRR18474148	MmSkMu	"Mm,skeletalmuscle,male"	PRJNA819493	36 weeks	150	Illumina MiSeq	PAIRED	male	NA	skeletalmuscle	NA	
+SRR18474149	MmSkMu	"Mm,skeletalmuscle,male"	PRJNA819493	36 weeks	150	Illumina MiSeq	PAIRED	male	NA	skeletalmuscle	NA	
+SRR18474150	MmSkMu	"Mm,skeletalmuscle,male"	PRJNA819493	14 weeks	150	Illumina MiSeq	PAIRED	male	NA	skeletalmuscle	NA	
+SRR18474151	MmSkMu	"Mm,skeletalmuscle,male"	PRJNA819493	14 weeks	150	Illumina MiSeq	PAIRED	male	NA	skeletalmuscle	NA	
+SRR18474152	MmSkMu	"Mm,skeletalmuscle,male"	PRJNA819493	14 weeks	150	Illumina MiSeq	PAIRED	male	NA	skeletalmuscle	NA	
+SRR18474156	MmSkMu	"Mm,skeletalmuscle,male"	PRJNA819493	14 weeks	150	Illumina MiSeq	PAIRED	male	NA	skeletalmuscle	NA	
+SRR18474167	MmSkMu	"Mm,skeletalmuscle,male"	PRJNA819493	14 weeks	150	Illumina MiSeq	PAIRED	male	NA	skeletalmuscle	NA	
+SRR18244826	MmSkMu	"Mm,Muscle,NA"	PRJNA813153	18 weeks	302	Illumina NovaSeq 6000	PAIRED	NA	C57BL/6	Muscle	Illumina TruSeq Stranded Total RNA Library Prep Kit 	
+SRR18244827	MmSkMu	"Mm,Muscle,NA"	PRJNA813153	18 weeks	302	Illumina NovaSeq 6000	PAIRED	NA	C57BL/6	Muscle	Illumina TruSeq Stranded Total RNA Library Prep Kit 	
+SRR18244828	MmSkMu	"Mm,Muscle,NA"	PRJNA813153	18 weeks	302	Illumina NovaSeq 6000	PAIRED	NA	C57BL/6	Muscle	Illumina TruSeq Stranded Total RNA Library Prep Kit 	
+A377-A378T1	MmFusion	"Mm,Xenograft_C2C12_VGLL2_NCOA2"	NA	NA	NA	NA	NA	NA	NA	tumor	NA	
+A377-A378T7	MmFusionControl	"Mm,Xenograft_C2C12_pcDNA"	NA	NA	NA	NA	NA	NA	NA	tumor	NA	
+A377-A378T2	MmFusion	"Mm,Xenograft_C2C12_VGLL2_NCOA2"	NA	NA	NA	NA	NA	NA	NA	tumor	NA	
+A377-A378T8	MmFusionControl	"Mm,Xenograft_C2C12_pcDNA"	NA	NA	NA	NA	NA	NA	NA	tumor	NA	
+A377-A378T3	MmFusion	"Mm,Xenograft_C2C12_VGLL2_NCOA2"	NA	NA	NA	NA	NA	NA	NA	tumor	NA	
+A377-A378T4	MmFusion	"Mm,Xenograft_C2C12_VGLL2_NCOA2"	NA	NA	NA	NA	NA	NA	NA	tumor	NA	
+A377-A378T5	MmFusion	"Mm,Xenograft_C2C12_VGLL2_NCOA2"	NA	NA	NA	NA	NA	NA	NA	tumor	NA	
+A377-A378T6	MmFusion	"Mm,Xenograft_C2C12_VGLL2_NCOA2"	NA	NA	NA	NA	NA	NA	NA	tumor	NA	
+A667T19	DrFusion	"Dr,D738"		6.29 weeks	NA	NA	NA	NA	P53-/-	tumor	NA	
+A667T20	DrFusion	"Dr,D739"		7 weeks	NA	NA	NA	NA	AB/TL	tumor	NA	
+A667T21	DrFusion	"Dr,D742"		7.29 weeks	NA	NA	NA	NA	P53-/-	tumor	NA	
+A667T22	DrFusion	"Dr,D777"		7.14 weeks	NA	NA	NA	NA	AB/TL	tumor	NA	
+A667T23	DrFusion	"Dr,D799"		10.71 weeks	NA	NA	NA	NA	AB/TL	tumor	NA	
+A667T24	DrFusion	"Dr,D800"		10.71 weeks	NA	NA	NA	NA	AB/TL	tumor	NA	
+A667T25	DrFusion	"Dr,D801"		10.71 weeks	NA	NA	NA	NA	AB/TL	tumor	NA	
+A667T26	DrFusion	"Dr,D807"		14.29 weeks	NA	NA	NA	NA	AB/TL	tumor	NA	
+A667T27	DrFusion	"Dr,D808"		6.29 weeks	NA	NA	NA	NA	AB/TL	tumor	NA	
+A667T28	DrFusion	"Dr,D813-Head"		6.71 weeks	NA	NA	NA	NA	AB/TL	tumor	NA	
+A667T29	DrFusion	"Dr,D813-Tail"		6.71 weeks	NA	NA	NA	NA	AB/TL	tumor	NA	
+D809	DrFusion	"Dr,D809"										
+D811	DrFusion	"Dr,D811"										
+D812-HEAD	DrFusion	"Dr,D812-HEAD"										
+D812-TAIL	DrFusion	"Dr,D812-TAIL"										
+D814	DrFusion	"Dr,D814"										
+D815	DrFusion	"Dr,D815"										
+D874	DrFusion	"Dr,D874"										
+EGAR00001508656_SARC102	HsFusion	"Hs,EGAR00001508656_SARC102,male"		4.5 years		Illumina HiSeq 2500	PAIRED	male		tumor		
+EGAR00001508623_SARC070-Primary	HsFusion	"Hs,EGAR00001508623_SARC070_primary,male"		3.2 years		Illumina HiSeq 2500	PAIRED	male		tumor		thorax
+EGAR00001508624_SARC070-Relapse1	HsFusion	"Hs,EGAR00001508624_SARC070_relapse,male"		3.2 years		Illumina HiSeq 2500	PAIRED	male		tumor		shoulder
+EGAR00001508618_SARC065	HsFusion	"Hs,EGAR00001508618_SARC065,female"		0.2 years		Illumina HiSeq 2500	PAIRED	female		tumor		shoulder
+EGAR00001508614_SARC061	HsFusion	"Hs,EGAR00001508614_SARC061,female"		0 years		Illumina HiSeq 2500	PAIRED	female		tumor		forearm
+GTEX*	HsSkMu	"Hs,skeletalmuscle"										arm
+SRR6507311	DrKras	"Dr,Kras"								tumor		
+SRR6507312	DrKras	"Dr,Kras"								tumor		
+SRR6507313	DrKras	"Dr,Kras"								tumor		
+SRR6507300	DrKrasCtrl	"Dr,KrasCtrl"								Control		
+SRR6507301	DrKrasCtrl	"Dr,KrasCtrl"								Control		
+SRR6507302	DrKrasCtrl	"Dr,KrasCtrl"								Control		
+D948_Muscle	DrSkMu	"Dr,skeletalmuscle"								skeletalmuscle		
+D949_Muscle	DrSkMu	"Dr,skeletalmuscle"								skeletalmuscle		
+D950_Muscle	DrSkMu	"Dr,skeletalmuscle"								skeletalmuscle		
+D951_Muscle	DrSkMu	"Dr,skeletalmuscle"								skeletalmuscle		
+D952_Muscle	DrSkMu	"Dr,skeletalmuscle"								skeletalmuscle		
+A374-A375T23	DrSkMu	"Dr,skeletalmuscle"								skeletalmuscle		
+A374-A375T24	DrSkMu	"Dr,skeletalmuscle"								skeletalmuscle		
+A374-A375T11	DrCICDUX4	"Dr,CICDUX4"								tumor		
+A374-A375T12	DrCICDUX4	"Dr,CICDUX4"								tumor		
+A374-A375T13	DrCICDUX4	"Dr,CICDUX4"								tumor		
+A374-A375T14	DrCICDUX4	"Dr,CICDUX4"								tumor		
+A374-A375T15	DrCICDUX4	"Dr,CICDUX4"								tumor		
+A374-A375T16	DrCICDUX4	"Dr,CICDUX4"								tumor		
+A374-A375T17	DrCICDUX4	"Dr,CICDUX4"								tumor		
+A374-A375T18	DrCICDUX4	"Dr,CICDUX4"								tumor		
+A374-A375T19	DrCICDUX4	"Dr,CICDUX4"								tumor		
+A374-A375T20	DrCICDUX4	"Dr,CICDUX4"								tumor		
+A374-A375T21	DrCICDUX4	"Dr,CICDUX4"								tumor		
+A374-A375T22	DrCICDUX4	"Dr,CICDUX4"								tumor		
