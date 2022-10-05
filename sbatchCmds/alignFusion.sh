@@ -1,6 +1,6 @@
 #!/bin/sh
 #SBATCH --account=gdkendalllab
-#SBATCH --array=0-36
+#SBATCH --array=0-35
 #SBATCH --error=slurmOut/alignFusion-%j.txt
 #SBATCH --output=slurmOut/alignFusion-%j.txt
 #SBATCH --nodes=1
@@ -28,11 +28,18 @@ inputPath=${fileName%/*}
 baseName=${fileName##*/}
 baseName=${baseName%.R1.fastq.gz}
 
+refName=ref/fusionRef
+
+if [[ $fileName =~ .*EGAR.* ]]
+then
+    refName=ref/HsFusionRef
+fi
+
 STAR \
     --runMode alignReads \
     --runThreadN 3 \
     --readFilesCommand zcat \
-    --genomeDir ref/fusionRef \
+    --genomeDir ${refName} \
     --outTmpDir ${TMPDIR}/temp \
     --outSAMtype BAM Unsorted \
     --readFilesIn ${inputPath}/${baseName}.R1.fastq.gz \

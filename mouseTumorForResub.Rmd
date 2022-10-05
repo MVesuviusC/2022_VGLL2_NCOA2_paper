@@ -7,17 +7,10 @@ output: knitrBootstrap::bootstrap_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
-                      cache = TRUE,
-                      fig.height = 10,
-                      fig.width = 20,
-                      dpi = 300,
-                      bootstrap.show.code = FALSE,
-                      bootstrap.show.output = FALSE,
-                      bootstrap.show.message = FALSE,
-                      bootstrap.show.warning = FALSE)
+                      cache = TRUE)
 ```
 
-# RNAseq analysis of her3 knockout and morpholino zebrafish samples
+# RNAseq analysis of zebrafish, human and mouse tumors
 
 ## Goals:
 
@@ -99,41 +92,8 @@ Human data from patient fusion tumors
 Normal human skeletal muscle data from GTEx
 https://storage.googleapis.com/gtex_analysis_v8/rna_seq_data/gene_reads/gene_reads_2017-06-05_v8_muscle_skeletal.gct.gz
 
-## Approach:
-
-***
-Figure 2 of paper - moving to supplement and replace with comparison vs adult skeletal muscle
-***
-
-***
-Allograft Figure 6
- - Likely end up in supplemental data
-scatterplot of C2C12-VN2 vs adult muscle (maybe C2C12 control) expression vs VN2 human tumors vs adult muscle
-pathways co-enriched in both comparisons
-***
-Kras vs our tumors
-PCA - include RNAseq despite P53
-include adult muscle to check for batch effect
-heatmap
-scatterplot of Kras vs our tumors expression Fold change values
-    do GSEA or pathway enrichment analysis on shared DE genes and uniquely DE genes
-
-***
-
-**
-Level of fusion gene expression between mouse, zebrafish and human
-**
-
-***
-do PCA/umap of Dr tumor samples
-
-***
-
-
-To analyze these samples, we aligned with HiSat2 and counted the number of reads
-mapping to each gene using featureCounts. We used EdgeR to test for differential
-expression between the groups. For most statistical analyses and plotting, we
-used R and ggplot2.
+Human fusion info from:
+https://onlinelibrary.wiley.com/action/downloadSupplement?doi=10.1002%2Fpath.5053&file=path5053-sup-0001-SupInfo.pdf
 
 ## DE comparisons to make
 Based on group names from sampleMetadata.xlsx
@@ -142,34 +102,6 @@ DrFusion vs DrSkMu
 DrKras vs DrKrasCtrl
 MmFusion vs MmSkMu
 HsFusion vs HsSkMu
-
-AGDEX analysis 
-
-    VGLL2NCOA2 human and fish tumors vs. mature skeletal muscle 
-
-    VGLL2NCOA2 human and fish tumors vs. KRAS driven RMS 
-
-    Mouse VGLL2NCOA2 and fish tumors vs. mature skeletal muscle 
-
-Motif analysis (done) 
-
-VGLL2-NCOA2 expression in the mouse xenograft models 
-
-    Determining reads that span the fusion breakpoint/levels of expression in the VN2 mouse allograft models. 
-
-27 developmental gene signature 
-
-    Are these genes expressed in mouse VGLL2-NCOA2 tumors compared to C2C12 controls? 
-
-    Are these genes expressed in patient VGLL2-NCOA2 tumors compared to mature skeletal muscle? 
-
-Chip-Seq analysis from zebrafish tumors and C2C12 (as data is generated)
-
-Tead motifs upstream of 27 developmental genes
-
-iRDB from St. Jude
-    Arf6 expression across tumors
-    expression vs gene effect scatterplot
 
 # Workflow
 
@@ -181,39 +113,6 @@ theme_update(plot.title = element_text(hjust = 0.5))
 options(bitmaptype = "cairo")
 library(gt)
 library(edgeR)
-```
-
-## Helper functions
-Function created through modification of code here:
-https://nmikolajewicz.github.io/scMiko/articles/Reports/M18_ClusterOptimization_cao2019_10000cells_240122.html
-```{r fun, cache=FALSE}
-plot_tabs <- function(plot_list_name, level = "###") {
-  knitr_chunk_list <-
-    lapply(seq_along(get(plot_list_name)), function(i) {
-      tab_name <- names(get(plot_list_name))[i]
-
-      a1 <- knitr::knit_expand(text = sprintf(paste0("\n",
-                                              level,
-                                              " %s\n"),
-                                              tab_name))
-
-      a2 <- knitr::knit_expand(text = sprintf("\n```{r %s, message=FALSE, warning=FALSE}",
-                                              paste0(tab_name,
-                                                    "_",
-                                                    i)))
-
-      a3 <- knitr::knit_expand(text = sprintf(paste0("\n",
-                                                    plot_list_name,
-                                                    "[['%s']]"),
-                                                    tab_name))
-
-      a4 <- knitr::knit_expand(text = "\n```\n\n")
-
-      paste(a1, a2, a3, a4, collapse = "\n")
-    })
-
-  paste(knitr::knit(text = paste(knitr_chunk_list, collapse = "\n")))
-}
 ```
 
 ## Make up directory structure
@@ -394,18 +293,13 @@ sbatch ref/fusionRef/genStarFusionRef.sh
 ```
 
 ### Align mouse tumor data to the mm10 genome
-```{r, echo=FALSE, cache=FALSE}
-knitr::read_chunk("sbatchCmds/alignMmVGLL.sh", labels = "alignCode")
-```
-```{bash alignCode, eval=FALSE, cache=FALSE}
-```
 ```{bash align, eval=FALSE}
 STAR --version
 
 sbatch sbatchCmds/alignMmVGLL.sh
 ```
 
-## Align mouse skeletal muscle data from SRA
+### Align mouse skeletal muscle data from SRA
 Download from SRA
 Trim adapters
 Trim reads to 101bp to match mouse tumor samples
@@ -437,11 +331,6 @@ sbatch sbatchCmds/alignFusion.sh
 ## Count the number of reads aligned per gene
 
 ### Count mouse genes
-```{r, echo=FALSE, cache=FALSE}
-knitr::read_chunk("sbatchCmds/countMmGenes.sh", labels = "countAlignedCode")
-```
-```{bash countAlignedCode, eval=FALSE, cache=FALSE}
-```
 ```{bash countAlignedMm, eval=FALSE}
 sbatch sbatchCmds/countMmGenes.sh
 ```
@@ -458,8 +347,7 @@ sbatch sbatchCmds/countDrGenes.sh
 
 ### Plot percent of reads aligned
 Get data from Log.final.out
-     -- need to re-do this section
-```{r plotAligned, dependson='align', eval=FALSE}
+```{r plotAligned, dependson='align', eval=TRUE}
 grep_counts <- function(query, name) {
     system(paste0("grep '", query, "' output/aligned/*/*Log.final.out"),
            intern = TRUE) %>%
@@ -481,38 +369,23 @@ aligned_counts <-
              into = c("project", "sample"),
              sep = "/")
 
-for species_abr in c("Mm", "Hs", "Dr") {
-    tibble(assigned_reads =
-           read_tsv(paste0("output/geneCounts/geneCounts", species_abr, ".txt"),
-                    col_names = FALSE,
-                    show_col_types = FALSE) %>%
-        select(-X1) %>%
-        colSums(),
-    sample = system(""))
-}
-
-    read_tsv(list.files(path = "output/aligned/counts",
-                        pattern = "_counts.txt",
-                        full.names = TRUE),
-             id = "Sample",
-             col_names = "aligned_reads",
-             show_col_types = FALSE) %>%
-    mutate(Sample = str_remove(Sample, "output/aligned/counts/") %>%
-            str_remove("_counts.txt"))
-
-ggplot(aligned_counts, aes(x = Sample, y = aligned_reads / 1000000)) +
+plot_aligned <-
+    ggplot(aligned_counts, aes(x = sample,
+                           y = as.numeric(mapped_reads) / as.numeric(input_reads),
+                           fill = project)) +
     geom_col() +
     labs(x = "",
-         y = "Reads Aligned (in millions)",
-         title = "Number of Reads Aligned to the Genome") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+         y = "Proportion of reads mapped",
+         title = "Proportion of Reads Aligned to the Genome") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    scale_fill_brewer(palette = "Set2")
 
 ggsave("output/figures/CountAligned.png",
+       plot = plot_aligned,
        height = 3000,
        width = 4000,
        units = "px")
 ```
-
 
 ## Read in gene counts per sample
 
@@ -528,7 +401,7 @@ http://www.ensembl.org/biomart/martview/
 https://www.alliancegenome.org/downloads
 
 ### Merge read counts into a single table that can be used later
-```{r combineGeneCounts, cache.var=FALSE, eval=FALSE}
+```{r combineGeneCounts, cache.var=FALSE, eval=TRUE}
 for (species in c("Dr", "Mm", "Hs")) {
     gene_counts <- read_tsv(list.files(path = "output/geneCounts",
                                        pattern = paste0("geneCounts",
@@ -591,15 +464,9 @@ for (species in c("Dr", "Mm", "Hs")) {
 }
 ```
 
-## PCA on multiple datasets
-ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109581/suppl/GSE109581%5FcountsMatrix%2Etxt%2Egz
+## PCA
 
-
-### PCA on zebrafish samples
-VGLL2NCOA2 tumors
-KRAS GSE39731; GSE32425), CICDUX4 (us), MPNST (GSE11493), skeletal muscle (us); and MPNST/ERMS/leukemia/others from fish (GSE109581) 
-
-### PCA 
+### PCA on each species separately
 ```{r pca, eval=TRUE}
 metadata <- read_tsv("misc/sampleMetadata.txt",
                        show_col_types = FALSE)
@@ -610,7 +477,7 @@ for (species in c("Dr", "Mm", "Hs")) {
                                    species,
                                    ".txt.gz"),
                             show_col_types = FALSE) %>%
-    column_to_rownames("gene")
+        column_to_rownames("gene")
 
     # Add GTEX data to the metadata
     if (species == "Hs") {
@@ -641,6 +508,13 @@ for (species in c("Dr", "Mm", "Hs")) {
         cpm(data_dge) %>%
         as.data.frame() %>%
         t()
+
+    write.table(as.data.frame(t(norm_counts)),
+                file = paste0("output/geneCounts/geneCountsCombined",
+                              species,
+                              "_norm.txt"),
+                quote = FALSE,
+                sep = "\t")
 
     pca_out <- prcomp(norm_counts)
 
@@ -706,7 +580,7 @@ for (species in c("Dr", "Mm", "Hs")) {
 }
 ```
 
-# Do PCA/UMAP on just zebrafish tumors and skeletal muscle
+### Do PCA/UMAP on just zebrafish tumors and skeletal muscle
 ```{r pca_zebrafish_tumors, eval=TRUE}
 metadata <- read_tsv("misc/sampleMetadata.txt",
                        show_col_types = FALSE) %>%
@@ -716,9 +590,6 @@ gene_counts <- read_tsv(paste0("output/geneCounts/geneCountsCombinedDr.txt.gz"),
                         show_col_types = FALSE) %>%
     column_to_rownames("gene") %>%
     select(matches(metadata$sample))
-    # select(-matches("Muscle"),
-    #         -`A374-A375T23`,
-    #         -`A374-A375T24`)
 
 groups <- metadata[metadata %>%
                     pull(sample) %>%
@@ -845,24 +716,14 @@ ggsave(paste0("output/figures/umap_Dr_tumors_groups.png"),
 
 ### Merged species PCA
 Show human and mouse samples in PCA and make heatmap of 27 genes of interest
-```{r mergedPCA, eval=FALSE}
+```{r mergedPCA, eval=TRUE}
 species_full <- list(Hs = "Homo sapiens",
-                     Mm = "Mus musculus")
+                     Mm = "Mus musculus",
+                     Dr = "Danio rerio")
 
-orthologs <- read_tsv("../refs/ORTHOLOGY-ALLIANCE_COMBINED.tsv.gz",
-                      show_col_types = FALSE,
-                      comment = "#") %>%
-    dplyr::filter(Gene1SpeciesName == species_full[["Mm"]] &
-                    Gene2SpeciesName == species_full[["Hs"]]) %>%
-    select(Gene1Symbol, Gene2Symbol) %>%
-    rename(Mm = Gene1Symbol,
-           Hs = Gene2Symbol) %>%
-    distinct()
-
-merged_data <- tibble(Mm = character())
+merged_data <- tibble(Dr = character())
 
 for (species in c("Dr", "Mm", "Hs")) {
-
     gene_counts <- read_tsv(paste0("output/geneCounts/geneCountsCombined",
                                    species,
                                    ".txt.gz"),
@@ -873,8 +734,8 @@ for (species in c("Dr", "Mm", "Hs")) {
         gene_counts <- right_join(read_tsv("../refs/ORTHOLOGY-ALLIANCE_COMBINED.tsv.gz",
                                            show_col_types = FALSE,
                                            comment = "#") %>%
-            dplyr::filter(Gene1SpeciesName == species_full[["Mm"]] &
-                          Gene2SpeciesName == species_full[["Hs"]]) %>%
+            dplyr::filter(Gene1SpeciesName == species_full[["Dr"]] &
+                          Gene2SpeciesName == species_full[[species]]) %>%
             select(Gene1Symbol, Gene2Symbol) %>%
             rename(Dr = Gene1Symbol,
                    {{ species }} := Gene2Symbol) %>%
@@ -895,16 +756,14 @@ for (species in c("Dr", "Mm", "Hs")) {
             summarize(across(where(is.numeric), sum), .groups = "drop")
     }
 
-    gene_counts <- left_join(gene_counts, orthologs, by = species)
-
     merged_data <- full_join(merged_data, gene_counts) %>%
         na.omit()
 }
 
 merged_data <-
     merged_data %>%
-    mutate(gene = paste(Mm, Hs, sep = "/"), .before = 1) %>%
-    select(-Mm, -Hs) %>%
+    mutate(gene = paste(Dr, Mm, Hs, sep = "/")) %>%
+    select(-Mm, -Hs, -Dr) %>%
     column_to_rownames("gene")
 
 metadata <-
@@ -946,7 +805,7 @@ set.seed(1337)
 non_gtex_samples <- grep("GTEX", rownames(norm_counts), invert = TRUE)
 gtex_samples_20 <- grep("GTEX", rownames(norm_counts)) %>%
     sample(size = 20)
-sub_gtex <- norm_counts[c(non_gtex_samples, gtex_samples_20),]
+sub_gtex <- norm_counts[c(non_gtex_samples, gtex_samples_20), ]
 
 annot_df <-  data.frame(Group = groups[c(non_gtex_samples, gtex_samples_20)],
                         row.names = colnames(merged_data)[c(non_gtex_samples, gtex_samples_20)]) %>%
@@ -1018,11 +877,27 @@ ggsave(paste0("output/figures/PCA_all_boxplot.png"),
     width = 13)
 
 set.seed(1337)
-umap_out <- umap::umap(norm_counts)$layout %>%
+sub_gtex_Mm_Hs <-
+    sub_gtex[rownames(sub_gtex) %in% (metadata %>%
+                        filter(species == "Hs" | species == "Mm") %>%
+                        pull(sample)), ]
+
+umap_out <- umap::umap(sub_gtex_Mm_Hs)$layout %>%
     as.data.frame() %>%
     rownames_to_column("sample") %>%
     as_tibble() %>%
-    full_join(metadata)
+    left_join(metadata %>%
+                mutate(group = str_replace(group,
+                                           "^HsFusion$",
+                                           "Human VGLL2NCOA2 Tumors") %>%
+                               str_replace("^HsSkMu$",
+                                           "Human Skeletal Muscle") %>%
+                               str_replace("^MmFusion$",
+                                           "Mouse VGLL2NCOA2 Tumors") %>%
+                               str_replace("^MmSkMu$",
+                                           "Mouse Skeletal Muscle") %>%
+                               str_replace("^MmFusionControl$",
+                                           "Mouse VGLL2NCOA2 Control")))
 
 centroids <- umap_out %>%
     group_by(group) %>%
@@ -1034,7 +909,7 @@ ggplot(umap_out,
         aes(x = V1,
             y = V2,
             color = group)) +
-    geom_point(alpha = 0.5) +
+    geom_point(alpha = 0.9, size = 2) +
     ggrepel::geom_text_repel(data = centroids,
                              aes(x = V1,
                                  y = V2,
@@ -1042,7 +917,7 @@ ggplot(umap_out,
                              color = "black",
                              force = 50) +
     scale_color_brewer(palette = "Paired",
-                        name = "Group")
+                       name = "Group")
 
 ggsave(paste0("output/figures/umap_Mm_Hs.png"),
     height = 8,
@@ -1060,8 +935,8 @@ HsFusion vs HsSkMu
 metadata <- read_tsv("misc/sampleMetadata.txt",
                        show_col_types = FALSE)
 
-de_cmp_table <- tibble(group_1 = c("DrFusion", "DrKras", "MmFusion", "HsFusion"),
-                        group_2 = c("DrSkMu", "DrKrasCtrl", "MmSkMu", "HsSkMu"))
+de_cmp_table <- tibble(group_1 = c("DrSkMu", "DrKrasCtrl", "MmSkMu", "HsSkMu"),
+                       group_2 = c("DrFusion", "DrKras", "MmFusion", "HsFusion"))
 
 logFC_plot_list <- list()
 volcano_plot_list <- list()
@@ -1102,6 +977,11 @@ for (i in seq_len(nrow(de_cmp_table))) {
             summarize(across(where(is.numeric), sum), .groups = "drop")
     }
 
+    # Make MmFusionControl part of MmSkMu so these samples are included in the DE analysis
+    if (species == "Mm") {
+        metadata$group[metadata$group == "MmFusionControl"] <- "MmSkMu"
+    }
+
     group_1_samples <- metadata$sample[metadata$group %in%
                                         de_cmp_table$group_1[i]]
     group_2_samples <- metadata$sample[metadata$group %in%
@@ -1113,8 +993,9 @@ for (i in seq_len(nrow(de_cmp_table))) {
                                       colnames(count_data))] %>%
         column_to_rownames("gene")
 
-    groups <- c(rep(de_cmp_table$group_1[i], length(group_1_samples)),
-                rep(de_cmp_table$group_2[i], length(group_2_samples)))
+    groups <- factor(c(rep(de_cmp_table$group_1[i], length(group_1_samples)),
+                       rep(de_cmp_table$group_2[i], length(group_2_samples))),
+                     levels = c(de_cmp_table$group_1[i], de_cmp_table$group_2[i]))
 
     saveRDS(groups, file = paste0("output/de/",
                                de_cmp_table$group_1[i],
@@ -1157,12 +1038,12 @@ for (i in seq_len(nrow(de_cmp_table))) {
             inner_join(summarized_data,
                        read_tsv("/home/gdkendalllab/lab/references/annotations/zebrafish_gene_info.txt.gz",
                                 show_col_types = FALSE,
-                                col_select = c("Gene_stable_ID_version",
+                                col_select = c("Gene_stable_ID",
                                                "Gene_name")) %>%
                        mutate(Gene = Gene_name) %>%
                        distinct()) %>%
                 mutate(Gene = Gene_name) %>%
-                select(-Gene_name, -Gene_stable_ID_version) %>%
+                select(-Gene_name) %>%
                 group_by(Gene) %>%
                 distinct()
     }
@@ -1272,25 +1153,595 @@ for (i in seq_len(nrow(de_cmp_table))) {
 }
 ```
 
-### logFC Plots {.tabset}
+### GSEA on individual DE datasets
+```{r gsea, eval=TRUE}
+species_full <- list(Hs = "Homo sapiens",
+                     Dr = "Danio rerio",
+                     Mm = "Mus musculus")
 
-`r plot_tabs("logFC_plot_list", level = "####")`
+orgdb_list <- list(Hs = org.Hs.eg.db::org.Hs.eg.db,
+                   Dr = org.Dr.eg.db::org.Dr.eg.db,
+                   Mm = org.Mm.eg.db::org.Mm.eg.db)
 
-### Scatterplots {.tabset}
+gsea_df <- tibble()
+for (de_file in list.files(path = "output/de",
+                           pattern = "_edgeR.txt",
+                           full.names = TRUE)) {
 
-`r plot_tabs("scatterplot_list", level = "####")`
+    species <- de_file %>%
+            str_remove(".+\\/") %>%
+            substr(0, 2)
 
-### Volcano Plots {.tabset}
+    species_name <- species_full[[species]]
 
-`r plot_tabs("volcano_plot_list", level = "####")`
+    cmp_name <-
+        de_file %>%
+        str_remove(".+\\/") %>%
+        str_remove("_edgeR.txt")
 
+    de_data <-
+        read_tsv(de_file,
+                 col_select = c("Gene", "logFC"),
+                 show_col_types = FALSE) %>%
+        arrange(-1 * logFC) %>%
+        distinct() %>%
+        pull(logFC, name = Gene)
+
+    set.seed(1337)
+    gsea_out <- clusterProfiler::gseGO(geneList = de_data,
+                                       OrgDb = orgdb_list[[species]],
+                                       ont = "ALL",
+                                       keyType = "SYMBOL")
+
+    write_tsv(as.data.frame(gsea_out),
+              file = paste0("output/gsea/gsea_",
+                            de_file %>%
+                                str_remove(".+\\/") %>%
+                                str_remove("_edgeR.txt"),
+                            "_out.txt"))
+
+    # GSEA plots for top 10 up/down
+    top_up_down <-
+        as.data.frame(gsea_out) %>%
+        as_tibble() %>%
+        mutate(order = seq_len(n()),
+               group = if_else(NES > 0, "up", "down")) %>%
+        filter(p.adjust <= 0.05) %>%
+        select(enrichmentScore,
+               order,
+               p.adjust,
+               NES,
+               group,
+               ONTOLOGY,
+               Description) %>%
+        group_by(ONTOLOGY, group) %>%
+        arrange(p.adjust, abs(NES) * -1, .by_group = TRUE) %>%
+        slice_head(n = 10) %>%
+        ungroup()
+    pdf(paste0("output/figures/",
+               cmp_name,
+               "_gseaPlots.pdf"))
+    for (i in seq_len(nrow(top_up_down))) {
+        print(clusterProfiler::gseaplot(
+            gsea_out,
+            by = "runningScore",
+            geneSetID = top_up_down$order[i],
+            title = paste0(top_up_down$ONTOLOGY[i],
+                           ": ",
+                           top_up_down$Description[i],
+                           "\nNES: ",
+                           round(top_up_down$NES[i], digits = 2),
+                           ", p=",
+                           sprintf("%.2e", top_up_down$p.adjust[i]))))
+    }
+    dev.off()
+
+    as.data.frame(gsea_out) %>%
+        as_tibble() %>%
+        filter(!is.na(ONTOLOGY)) %>%
+        group_by(ONTOLOGY, NES > 0) %>%
+        slice_head(n = 10) %>%
+        mutate(desc_wrapped = str_wrap(Description, width = 25) %>%
+                    fct_reorder(NES)) %>%
+        ggplot(aes(x = NES, y = desc_wrapped, fill = NES)) +
+        geom_col() +
+        facet_wrap(~ ONTOLOGY, nrow = 1, scales = "free") +
+        scale_fill_gradient2(low = "#4575b4",
+                             mid = "#ffffbf",
+                             high = "#d73027") +
+        labs(y = "",
+             title = cmp_name %>%
+                str_replace(paste0("_", species), " vs ") %>%
+                str_replace(species, paste0(species, " ")))
+
+    ggsave(paste0("output/figures/GSEA_",
+                  cmp_name,
+                  "_top.png"),
+           width = 15,
+           height = 8)
+
+    gsea_df <- bind_rows(gsea_df,
+                         as.data.frame(gsea_out) %>%
+        as_tibble() %>%
+        filter(!is.na(ONTOLOGY)) %>%
+        mutate(comp = cmp_name %>%
+                str_replace(paste0("_", species), " vs ") %>%
+                str_replace(species, paste0(species, " "))))
+}
+
+top_desc <-
+    gsea_df %>%
+    group_by(ONTOLOGY, comp, NES > 0) %>%
+    slice_head(n = 4) %>%
+    pull(Description) %>%
+    unique()
+
+gsea_df %>%
+    filter(Description %in% top_desc & p.adjust <= 0.05) %>%
+    mutate(desc_wrapped = str_wrap(Description, width = 35) %>%
+            fct_reorder(NES)) %>%
+    ggplot(aes(x = comp, y = desc_wrapped, fill = NES)) +
+    geom_tile() +
+    scale_fill_gradient2(low = "#4575b4",
+                        mid = "#ffffbf",
+                        high = "#d73027") +
+    facet_wrap(~ ONTOLOGY,
+               nrow = 1,
+               scales = "free") +
+    labs(x = "",
+         y = "",
+         title = "GSEA Results") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("output/figures/GSEA_combined_tile.png",
+       width = 15,
+       height = 12)
+
+edgeR_file <- list()
+edgeR_file[["Dr SkMu vs Fusion"]] <- "output/de/DrSkMu_DrFusion_edgeR.txt"
+edgeR_file[["Dr KrasCtrl vs Kras"]] <- "output/de/DrKrasCtrl_DrKras_edgeR.txt"
+replace_list <- list("SRR6507300" = "whole_fish_1",
+                     "SRR6507301" = "whole_fish_2",
+                     "SRR6507302" = "whole_fish_3",
+                     "SRR6507311" = "mutant_1",
+                     "SRR6507312" = "mutant_2",
+                     "SRR6507313" = "mutant_3")
+
+for (comparison in c("Dr SkMu vs Fusion", "Dr KrasCtrl vs Kras")) {
+    target_genes <-
+        gsea_df %>%
+        filter(Description == "muscle cell differentiation" &
+            comp == comparison) %>%
+            pull(core_enrichment) %>%
+            str_split(pattern = "/") %>%
+            unlist()
+
+    temp_df <-
+        read_tsv(edgeR_file[[comparison]],
+            show_col_types = FALSE) %>%
+        filter(Gene %in% target_genes) %>%
+        select(-matches("mean"),
+               -logFC,
+               -logCPM,
+               -PValue,
+               -FDR,
+               -signif,
+               -Gene_stable_ID) %>%
+        distinct() %>%
+        column_to_rownames("Gene") %>%
+        as.matrix()
+
+    if (comparison == "Dr KrasCtrl vs Kras") {
+        colnames(temp_df) <-
+            replace_list[colnames(temp_df)] %>%
+            unlist()
+    }
+
+    pheatmap::pheatmap(temp_df,
+                       scale = "row",
+                       main = "Dr Fusion Muscle Development Gene Expression",
+                       filename = paste0("output/figures/GSEA_valid_",
+                                         comparison,
+                                         "_MuscleDiff.png"),
+                       width = 10,
+                       height = 14)
+}
+```
+
+### IPA pathway analysis
+Ran IPA on DE results. Used a FC threshold of +/- 2 and FDR of 0.1
+```{r ipaPlotting, eval=TRUE}
+num_paths = 10
+
+pw_data <-
+    read_tsv(list.files(path = "output/ipa",
+                        pattern = "CanonicalPathways.txt",
+                        full.names = TRUE),
+             id = "sample") %>%
+    mutate(sample = str_remove(sample, ".+/") %>%
+            str_remove("_CanonicalPathways.txt")) %>%
+    rename(pathway = `Ingenuity Canonical Pathways`,
+           pval = `-log(p-value)`,
+           z_score = `z-score`) %>%
+    select(-Molecules) %>%
+    filter(z_score != "NaN" & pval >= 3) %>%
+    mutate(p_number = 2^(-1 * pval) %>%
+           sprintf("%.2e", .),
+           new_label = str_wrap(pathway, width = 40))
+
+pw_list <-
+    pw_data %>%
+    group_by(sample) %>%
+    arrange(pval, .by_group = TRUE) %>%
+    slice_head(n = num_paths) %>%
+    ungroup() %>%
+    pull(pathway) %>%
+    unique()
+
+
+pw_data %>%
+    filter(pathway %in% pw_list & pval >= -log2(0.05)) %>%
+    ggplot(aes(x = sample,
+               y = new_label,
+               fill = as.numeric(z_score),
+               label = paste0("p=", p_number, ", z=", z_score))) +
+    geom_tile(width = 0.8, height = 0.8, size = 1) +
+    scale_fill_gradient2(low = "#313695",
+                         mid = "#ffffbf",
+                         high = "#a50026",
+                         name = "Z-score") +
+    geom_text() +
+    theme(legend.position = "none") +
+    labs(x = "",
+         y = "",
+         title = "Enriched Pathways") +
+    scale_y_discrete(limits = rev)
+
+ggsave("output/figures/ipa_can_path.png",
+       width = 12,
+       height = 8)
+
+png("output/figures/ipa_can_path_venn.png",
+    width = 3000,
+    height = 3000,
+    res = 300)
+pw_data %>%
+    select(sample, pathway) %>%
+    mutate(in_group = TRUE) %>%
+    pivot_wider(names_from = sample,
+                values_from = in_group,
+                id_cols = pathway) %>%
+    mutate(across(everything(), ~replace_na(.x, FALSE))) %>%
+    ggplot(aes(A = DrControl_Kras,
+               B = DrSkMu_Fusion,
+               C = HsSkMu_Fusion,
+               D = MmSkMu_Fusion)) +
+    ggvenn::geom_venn(set_name_size = 4) +
+    theme_void() +
+    ggtitle("Canonical Pathways")
+dev.off()
+
+################################################################################
+### upstream regulators
+
+up_data <-
+    read_tsv(list.files(path = "output/ipa",
+                        pattern = "UpstreamRegulators.txt",
+                        full.names = TRUE),
+             id = "sample") %>%
+    mutate(sample = str_remove(sample, ".+/") %>%
+            str_remove("_UpstreamRegulators.txt")) %>%
+    rename(up_reg = `Upstream Regulator`,
+           mol_type = `Molecule Type`,
+           z_score = `Activation z-score`,
+           p_val = `p-value of overlap`) %>%
+    filter(grepl("chemical|other|microRNA|other", mol_type) == FALSE) %>%
+    select(-mol_type) %>%
+    filter(p_val <= 0.05 & !is.na(z_score)) %>%
+    mutate(new_label = str_wrap(up_reg, width = 30))
+
+up_list <-
+    up_data %>%
+    group_by(sample) %>%
+    arrange(p_val * -1) %>%
+    slice_head(n = num_paths) %>%
+    ungroup() %>%
+    pull(up_reg) %>%
+    unique()
+
+up_data %>%
+    filter(up_reg %in% up_list & p_val <= 0.05) %>%
+    ggplot(aes(x = sample,
+               y = new_label,
+               fill = as.numeric(z_score),
+               label = paste0("p=", sprintf("%.2e", p_val), ", z=", z_score))) +
+    geom_tile(width = 0.8, height = 0.8, size = 1) +
+    scale_fill_gradient2(low = "#313695",
+                         mid = "#ffffbf",
+                         high = "#a50026",
+                         name = "Z-score") +
+    geom_text() +
+    theme(legend.position = "none") +
+    labs(x = "",
+         y = "",
+         title = "Upstream Regulator") +
+    scale_y_discrete(limits = rev)
+
+ggsave("output/figures/ipa_upstream_reg.png",
+       width = 12,
+       height = 10)
+
+png("output/figures/ipa_upstream_reg_venn.png",
+    width = 3000,
+    height = 3000,
+    res = 300)
+up_data %>%
+    select(sample, up_reg) %>%
+    mutate(in_group = TRUE) %>%
+    pivot_wider(names_from = sample,
+                values_from = in_group,
+                id_cols = up_reg) %>%
+    mutate(across(everything(), ~replace_na(.x, FALSE))) %>%
+    ggplot(aes(A = DrControl_Kras,
+               B = DrSkMu_Fusion,
+               C = HsSkMu_Fusion,
+               D = MmSkMu_Fusion)) +
+    ggvenn::geom_venn(set_name_size = 4) +
+    theme_void() +
+    ggtitle("Upstream Regulators")
+dev.off()
+```
+
+### Jointly DE genes
+Make up files to use for IPA
+```{r joinGSEA, eval=TRUE}
+orthologs <- read_tsv("../refs/ORTHOLOGY-ALLIANCE_COMBINED.tsv.gz",
+                      show_col_types = FALSE,
+                      comment = "#") %>%
+    filter(Gene2SpeciesName == "Danio rerio" &
+           Gene1SpeciesName == "Mus musculus") %>%
+    rename(mm_gene = Gene1Symbol,
+           dr_gene = Gene2Symbol) %>%
+    select(mm_gene, dr_gene) %>%
+    distinct() %>%
+    full_join(read_tsv("../refs/ORTHOLOGY-ALLIANCE_COMBINED.tsv.gz",
+                        show_col_types = FALSE,
+                        comment = "#") %>%
+        filter(Gene2SpeciesName == "Danio rerio" &
+               Gene1SpeciesName == "Homo sapiens") %>%
+        rename(hs_gene = Gene1Symbol,
+               dr_gene = Gene2Symbol) %>%
+        select(hs_gene,dr_gene) %>%
+        distinct())
+
+# Get 
+summarized_data <-
+    read_tsv("output/de/DrSkMu_DrFusion_edgeR.txt",
+             show_col_types = FALSE) %>%
+    rename(dr_gene = Gene,
+           dr_gene_id = Gene_stable_ID,
+           dr_logfc = logFC,
+           dr_signif = signif,
+           dr_fdr = FDR) %>%
+    select(dr_gene,
+           dr_gene_id,
+           dr_logfc,
+           dr_signif,
+           dr_fdr,
+           DrFusion_mean,
+           DrSkMu_mean) %>%
+    distinct() %>%
+    left_join(read_tsv("output/de/MmSkMu_MmFusion_edgeR.txt",
+                       show_col_types = FALSE) %>%
+        rename(mm_gene = Gene,
+               mm_logfc = logFC,
+               mm_signif = signif,
+               mm_fdr = FDR) %>%
+        select(mm_gene,
+               mm_logfc,
+               mm_signif,
+               mm_fdr,
+               MmFusion_mean,
+               MmSkMu_mean) %>%
+        full_join(orthologs %>%
+                  select(mm_gene, dr_gene)) %>%
+        filter(!is.na(dr_gene)) %>%
+        distinct()) %>%
+    left_join(read_tsv("output/de/HsSkMu_HsFusion_edgeR.txt",
+                       show_col_types = FALSE) %>%
+        rename(hs_gene = Gene,
+               hs_logfc = logFC,
+               hs_signif = signif,
+               hs_fdr = FDR) %>%
+        select(hs_gene,
+               hs_logfc,
+               hs_signif,
+               hs_fdr,
+               HsFusion_mean,
+               HsSkMu_mean) %>%
+        full_join(orthologs %>%
+                  select(hs_gene, dr_gene)) %>%
+        filter(!is.na(dr_gene)) %>%
+        distinct()) %>%
+    distinct()
+
+# Write out table for IPA to use
+summarized_data %>%
+    select(dr_gene, dr_gene_id, dr_logfc, dr_fdr, mm_gene, mm_logfc, mm_fdr) %>%
+    distinct() %>%
+    na.omit() %>%
+    write_tsv("output/de/merged_species_table_Dr_Mm.txt")
+
+summarized_data %>%
+    select(dr_gene, dr_gene_id, dr_logfc, dr_fdr, hs_gene, hs_logfc, hs_fdr) %>%
+    distinct() %>%
+    na.omit() %>%
+    write_tsv("output/de/merged_species_table_Dr_Hs.txt")
+
+summarized_data %>%
+    select(mm_gene, mm_gene, mm_logfc, mm_fdr, hs_gene, hs_logfc, hs_fdr) %>%
+    distinct() %>%
+    na.omit() %>%
+    write_tsv("output/de/merged_species_table_Mm_Hs.txt")
+```
+
+### Joint GSEA
+```{r jointGSEA, eval=TRUE}
+orgdb_list <- list(Hs = org.Hs.eg.db::org.Hs.eg.db,
+                   Mm = org.Mm.eg.db::org.Mm.eg.db)
+
+gsea_df <- tibble()
+for (de_file in list.files(path = "output/de",
+                           pattern = "merged_species_table",
+                           full.names = TRUE)) {
+
+    species_1 <-
+        de_file %>%
+        str_remove(".+table_") %>%
+        str_remove("_.+") %>%
+        str_to_lower()
+
+    species_2 <-
+        de_file %>%
+        str_remove(".+_") %>%
+        str_remove(".txt") %>%
+        str_to_lower()
+
+    comparison <-
+        de_file %>%
+        str_remove(".+table_") %>%
+        str_remove(".txt")
+
+    de_data <-
+        read_tsv(de_file,
+                 show_col_types = FALSE) %>%
+        select(matches("gene$"),
+               matches("_logfc"),
+               matches("_fdr")) %>%
+        distinct() %>%
+        na.omit() %>%
+        rename(other_logfc = paste0(species_2, "_logfc"),
+               other_fdr = paste0(species_2, "_fdr"),
+               other_gene = paste0(species_2, "_gene")) %>%
+        filter(abs(get(paste0(species_1, "_logfc"))) >= 1 &
+                abs(other_logfc) >= 1 &
+                get(paste0(species_1, "_fdr")) <= 0.1 &
+                other_fdr <= 0.1) %>%
+        arrange(-1 * other_logfc) %>%
+        distinct() %>%
+        select(other_gene, other_logfc) %>%
+        distinct() %>%
+        pull(other_logfc, name = other_gene)
+
+    set.seed(1337)
+    gsea_out <- clusterProfiler::gseGO(geneList = de_data,
+                                       OrgDb = orgdb_list[[str_to_title(species_2)]],
+                                       ont = "ALL",
+                                       keyType = "SYMBOL")
+
+    write_tsv(as.data.frame(gsea_out),
+              file = paste0("output/gsea/gsea_co_DE_",
+                            comparison,
+                            "_out.txt"))
+
+    as.data.frame(gsea_out) %>%
+        as_tibble() %>%
+        filter(!is.na(ONTOLOGY)) %>%
+        group_by(ONTOLOGY, NES > 0) %>%
+        slice_head(n = 10) %>%
+        mutate(desc_wrapped = str_wrap(Description, width = 25) %>%
+                    fct_reorder(NES)) %>%
+        ggplot(aes(x = NES, y = desc_wrapped, fill = NES)) +
+        geom_col() +
+        facet_wrap(~ ONTOLOGY, nrow = 1, scales = "free") +
+        scale_fill_gradient2(low = "#4575b4",
+                             mid = "#ffffbf",
+                             high = "#d73027") +
+        labs(y = "",
+             title = comparison %>%
+                str_replace("_", " co-DE with "))
+
+    ggsave(paste0("output/figures/GSEA_co_de_",
+                  comparison,
+                  "_top.png"),
+           width = 15,
+           height = 8)
+
+    gsea_df <- bind_rows(gsea_df,
+                         as.data.frame(gsea_out) %>%
+        as_tibble() %>%
+        filter(!is.na(ONTOLOGY)) %>%
+        mutate(comp = comparison))
+}
+
+top_desc <-
+    gsea_df %>%
+    group_by(ONTOLOGY, comp, NES > 0) %>%
+    slice_head(n = 4) %>%
+    pull(Description) %>%
+    unique()
+
+gsea_df %>%
+    filter(Description %in% top_desc & p.adjust <= 0.05) %>%
+    mutate(desc_wrapped = str_wrap(Description, width = 35) %>%
+            fct_reorder(NES)) %>%
+    ggplot(aes(x = comp %>% str_replace("_", " co-DE with "),
+               y = desc_wrapped,
+               fill = NES)) +
+    geom_tile() +
+    scale_fill_gradient2(low = "#4575b4",
+                        mid = "#ffffbf",
+                        high = "#d73027") +
+    facet_wrap(~ ONTOLOGY,
+               nrow = 1,
+               scales = "free") +
+    labs(x = "",
+         y = "",
+         title = "GSEA Results") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("output/figures/GSEA_co_DE_combined_tile.png",
+       width = 15,
+       height = 12)
+
+top_desc_no_mouse <-
+    gsea_df %>%
+    filter(comp != "Mm_Hs") %>%
+    group_by(ONTOLOGY, comp, NES > 0) %>%
+    slice_head(n = 4) %>%
+    pull(Description) %>%
+    unique()
+
+gsea_df %>%
+    filter(Description %in% top_desc_no_mouse &
+            p.adjust <= 0.05 &
+            comp != "Mm_Hs") %>%
+    mutate(desc_wrapped = str_wrap(Description, width = 35) %>%
+            fct_reorder(NES)) %>%
+    ggplot(aes(x = comp %>% str_replace("_", " co-DE with "),
+               y = desc_wrapped,
+               fill = NES)) +
+    geom_tile() +
+    scale_fill_gradient2(low = "#4575b4",
+                        mid = "#ffffbf",
+                        high = "#d73027") +
+    facet_wrap(~ ONTOLOGY,
+               nrow = 1,
+               scales = "free") +
+    labs(x = "",
+         y = "",
+         title = "GSEA Results") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("output/figures/GSEA_co_DE_combined_tile_no_mouse.png",
+       width = 15,
+       height = 12)
+```
 
 ## Compare our zebrafish data to other datasets
-
-### VGLL2-NCOA2 vs mouse
-
-```{r cmpMouseFish, eval=FALSE}
-orthologs <- read_tsv("../refs/ORTHOLOGY-ALLIANCE_COMBINED.tsv.gz",
+```{r cmpMouseFish, eval=TRUE}
+orthologs <-
+    read_tsv("../refs/ORTHOLOGY-ALLIANCE_COMBINED.tsv.gz",
                       show_col_types = FALSE,
                       comment = "#") %>%
     filter(Gene2SpeciesName == "Danio rerio" &
@@ -1318,7 +1769,8 @@ orthologs <- bind_rows(tibble(mm_gene = c("Arf6",
                                                  "pfn2l"),
                               hs_gene = c("ARF6",
                                              "PFN2")),
-                       orthologs)
+                       orthologs %>%
+                        filter(dr_gene != "arf6b"))
 
 # This will duplicate rows where there are more than one human ortholog per zebrafish gene
 fish_genes <- read_tsv("VGLL2NCOA2_27genelist.txt",
@@ -1327,85 +1779,141 @@ fish_genes <- read_tsv("VGLL2NCOA2_27genelist.txt",
     left_join(orthologs)
 
 # Get 
-#summarized_dr <-
-    read_tsv("output/de/DrFusion_DrSkMu_edgeR.txt",
+summarized_data <-
+    read_tsv("output/de/DrSkMu_DrFusion_edgeR.txt",
              show_col_types = FALSE) %>%
     rename(dr_gene = Gene,
-          dr_logFC = logFC) %>%
+           dr_logfc = logFC,
+           dr_signif = signif) %>%
     select(dr_gene,
-           dr_logFC,
-           signif,
+           dr_logfc,
+           dr_signif,
            DrFusion_mean,
            DrSkMu_mean) %>%
-    left_join(orthologs)
+    distinct() %>%
+    filter(dr_gene %in% fish_genes$dr_gene) %>%
+    left_join(read_tsv("output/de/MmSkMu_MmFusion_edgeR.txt",
+                       show_col_types = FALSE) %>%
+        rename(mm_gene = Gene,
+               mm_logfc = logFC,
+               mm_signif = signif) %>%
+        select(mm_gene,
+               mm_logfc,
+               mm_signif,
+               MmFusion_mean,
+               MmSkMu_mean) %>%
+        full_join(orthologs %>%
+                  select(mm_gene, dr_gene)) %>%
+        filter(!is.na(dr_gene)) %>%
+        distinct()) %>%
+    left_join(read_tsv("output/de/HsSkMu_HsFusion_edgeR.txt",
+                       show_col_types = FALSE) %>%
+        rename(hs_gene = Gene,
+               hs_logfc = logFC,
+               hs_signif = signif) %>%
+        select(hs_gene,
+               hs_logfc,
+               hs_signif,
+               HsFusion_mean,
+               HsSkMu_mean) %>%
+        full_join(orthologs %>%
+                  select(hs_gene, dr_gene)) %>%
+        filter(!is.na(dr_gene)) %>%
+        distinct()) %>%
+    left_join(fish_genes %>%
+        select(dr_gene, mean_of_development) %>%
+        rename(DrDevel_mean = mean_of_development)) %>%
+    mutate(gene = paste(dr_gene,
+                        "/",
+                        mm_gene,
+                        "/",
+                        hs_gene))
 
-summary(fish_genes$mouse_gene %in% summarized_data$Gene)
+label_table <- list(mm_logfc = "Mouse",
+                    hs_logfc = "Human",
+                    dr_logfc = "Zebrafish")
 
-combined_data <- left_join(fish_genes,
-                  summarized_data %>%
-                    rename(mouse_gene = Gene,
-                           mouse_logFC = logFC) %>%
-                    select(mouse_gene,
-                           mouse_logFC,
-                           signif,
-                           Xenograft_C2C12_VGLL2_NCOA2_mean,
-                           Xenograft_C2C12_pcDNA_mean)) %>%
-    select(zebrafish_gene,
-           mouse_gene,
-           mouse_logFC,
-           signif,
-           mean_of_tumor_fpkm,
-           mean_of_development,
-           mean_of_muscle,
-           Xenograft_C2C12_VGLL2_NCOA2_mean,
-           Xenograft_C2C12_pcDNA_mean) %>%
-    mutate(zebrafish_logFC = log2(mean_of_tumor_fpkm / mean_of_muscle))
+cmp_lists <- list(c("mm_logfc", "dr_logfc"),
+                  c("hs_logfc", "dr_logfc"),
+                  c("mm_logfc", "hs_logfc"))
 
+for (comparisons in cmp_lists) {
+    group1 <- comparisons[[1]]
+    group2 <- comparisons[[2]]
 
-combined_data %>%
-    na.omit() %>%
-    select(mouse_logFC,
-           zebrafish_logFC,
-           signif,
-           zebrafish_gene,
-           mouse_gene) %>%
-ggplot(aes(x = mouse_logFC,
-           y = zebrafish_logFC,
-           color = signif)) +
-    geom_point() +
-    ggrepel::geom_text_repel(aes(label = paste(zebrafish_gene,
-                                               mouse_gene,
-                                               sep = "/"))) +
-    geom_vline(xintercept = 0) +
-    geom_hline(yintercept = 0) +
-    scale_color_brewer(palette = "Set2",
-                       name = "Significant\nin mouse") +
-    labs(x = "Mouse logFC",
-         y = "Zebrafish logFC",
-         title = "Differential Expression in Zebrafish and Mouse Tumors")
+    if (group1 == "mm_logfc") {
+        gene_col <- "mm_gene"
+    } else if (group1 == "hs_logfc") {
+        gene_col <- "hs_gene"
+    }
 
-ggsave(file = "output/figures/zebrafish_mouse_diff_expression.png",
-       width = 7,
-       height = 7)
+    sig_g1_col <- str_replace(group1, "logfc", "signif")
+    sig_g2_col <- str_replace(group2, "logfc", "signif")
 
-png(filename = "output/figures/zebrafish_mouse_diff_expression_heatmap.png",
+    summarized_data %>%
+        select(all_of(c(group1,
+                        group2,
+                        sig_g1_col,
+                        sig_g2_col,
+                        gene_col))) %>%
+        distinct() %>%
+        filter(!is.na(get(sig_g1_col))) %>%
+        mutate(sig = paste(get(sig_g1_col), get(sig_g2_col)) %>%
+                    str_replace("TRUE TRUE", "Both sig.") %>%
+                    str_replace("FALSE TRUE", paste("Sig. in",
+                                                    label_table[[group2]])) %>%
+                    str_replace("TRUE FALSE", paste("Sig. in",
+                                                    label_table[[group1]])) %>%
+                    str_replace("FALSE FALSE", "Neither sig.")) %>%
+        ggplot(aes(x = get(group1),
+                   y = get(group2),
+                   color = get(sig_g1_col))) +
+        geom_point() +
+        ggrepel::geom_text_repel(aes(label = get(gene_col)),
+                                 show.legend = FALSE) +
+        geom_vline(xintercept = 0) +
+        geom_hline(yintercept = 0) +
+        scale_color_brewer(palette = "Set2",
+                           name = paste0("Significant in\n",
+                                         label_table[[group1]])) +
+        labs(x = paste(label_table[[group1]], "logFC"),
+             y = paste(label_table[[group2]], "logFC"),
+             title = paste0("Differential Expression in ",
+                            label_table[[group2]],
+                            " and ",
+                            label_table[[group1]],
+                            " Tumors"))
+
+    ggsave(file = paste0("output/figures/",
+                         label_table[[group1]],
+                         "_",
+                         label_table[[group2]],
+                         "_diff_expression_scatterplot.png"),
+           width = 8,
+           height = 7)
+}
+
+png(filename = "output/figures/27_genes_heatmap.png",
     width = 2000,
     height = 2500,
     res = 300)
-combined_data %>%
-    mutate(gene = paste(zebrafish_gene, mouse_gene)) %>%
+summarized_data %>%
     select(gene,
-           mean_of_tumor_fpkm,
-           mean_of_muscle,
-           mean_of_development,
-           Xenograft_C2C12_VGLL2_NCOA2_mean,
-           Xenograft_C2C12_pcDNA_mean) %>%
-    rename_with(~ str_replace(.x, "mean_of_", "Zebrafish ") %>%
-                str_remove("_fpkm") %>%
+           DrSkMu_mean,
+           DrFusion_mean,
+           MmFusion_mean,
+           MmSkMu_mean,
+           HsFusion_mean,
+           HsSkMu_mean,
+           DrDevel_mean) %>%
+    rename_with(~ str_replace(.x, "SkMu", " muscle") %>%
+                str_replace("Devel", " devel.") %>%
                 str_remove("_mean") %>%
-                str_replace("Xeno", "Mm xeno") %>%
-                str_replace("pcDNA", "ctrl") %>%
-                str_replace_all("_", " ")) %>%
+                str_remove("_mean") %>%
+                str_replace("Fusion", " fusion") %>%
+                str_replace("^Dr", "D.r.") %>%
+                str_replace("^Mm", "M.m.") %>%
+                str_replace("^Hs", "H.s.")) %>%
     distinct() %>%
     column_to_rownames("gene") %>%
     as.matrix() %>% 
@@ -1415,24 +1923,12 @@ combined_data %>%
                        legend = FALSE,
                        angle_col = 45,
                        color = colorRampPalette(rev(RColorBrewer::brewer.pal(n = 7,
-                                                                         name = "YlOrRd")))(100))
+                                                                             name = "YlOrRd")))(100))
 dev.off()
 ```
 
-### Mouse tumors vs skeletal muscle
-
-
-### VGLL2-NCOA2 vs human RMS (VGLL2-NCOA2)
-
-
-### VGLL2-NCOA2 vs fish skeletal muscle
-
-### human RMS (VGLL2-NCOA2) vs human skeletal muscle
-SkM from GTEX
-
-
 ## Comparing DEPMAP gene effect and gene expression values for ARF6
-```{r plotiRDB, eval=FALSE}
+```{r plotiRDB, eval=TRUE}
 irdb <- read_tsv("iRDB_Arf6_RNAseq.txt", comment = "#") %>%
     mutate(diagnosis_short = fct_reorder(diagnosis_short, FPKM)) %>%
     select(diagnosis_short,
@@ -1494,108 +1990,205 @@ ggsave("output/figures/depmap_arf6_expression.png",
 ```
 
 ## Tead motifs upstream of 27 developmental genes
-
 ```{r motifs, eval=FALSE}
-read_tsv("VGLL2NCOA2_27genelist.txt", show_col_types = FALSE) %>%
+genes_27_names <-
+    read_tsv("VGLL2NCOA2_27genelist.txt", show_col_types = FALSE) %>%
     select(gene) %>%
-    left_join(read_tsv("/gpfs0/home1/gdkendalllab/lab/analyses/mvc002/refs/zebrafish_gene_info.txt.gz") %>%
+    left_join(read_tsv("/home/gdkendalllab/lab/analyses/mvc002/refs/zebrafish_gene_info.txt.gz",
+                       show_col_types = FALSE) %>%
                 select(`Gene name`, `Gene stable ID`) %>%
                 distinct() %>%
                 rename(gene = `Gene name`,
-                    gene_stable_id = `Gene stable ID`)
+                    gene_stable_id = `Gene stable ID`))
 
-/gpfs0/home1/gdkendalllab/lab/analyses/mvc002/refs/zebrafish_gene_info.txt.gz 
-
-/gpfs0/home1/gdkendalllab/lab/analyses/mvc002/refs/fasta/danRer11_gene_promoters.fasta.gz
-
-
+write_tsv(select(genes_27_names, gene_stable_id),
+          "output/promoters27/27_genes_zebrafish_gene_ids.txt")
 ```
 
+```{bash 27_genes_motifs, eval=FALSE}
+zgrep -A1 \
+    -f output/promoters27/27_genes_zebrafish_gene_ids.txt \
+    /home/gdkendalllab/lab/analyses/mvc002/refs/fasta/danRer11_gene_promoters.fasta.gz \
+    | grep -v "^--$" \
+    > output/promoters27/27genesPromoters.fa
+sbatch sbatchCmds/mast.sh
+```
+
+### Plot tead motifs upstream of 27 developmental genes
+```{r 27_genes_motifs_plot, eval=FALSE}
+tead_27 <-
+    read_delim(list.files(path = "output/promoters27/mast_out",
+                          pattern = "meme.txt",
+                          full.names = TRUE),
+               show_col_types = FALSE,
+               skip = 1,
+               comment = "#",
+               col_names = c("gene_stable_id",
+                             "strand",
+                             "motif",
+                             "id",
+                             "hit_start",
+                             "hit_end",
+                             "junk",
+                             "score",
+                             "p_val")) %>%
+    mutate(gene_stable_id = str_remove(gene_stable_id, "\\..+")) %>%
+    select(-junk) %>%
+    full_join(genes_27_names) %>%
+    filter(!is.na(id))
+
+long_tead_27 <-
+    tead_27 %>%
+    select(-motif, -score, -p_val) %>%
+    mutate(hit_num = row_number(),
+           hit_middle = hit_start + (hit_end - hit_start) / 2 ) %>%
+    pivot_longer(cols = c(-gene_stable_id, -strand, -gene, -id, -hit_num, -hit_middle),
+                 names_to = "end",
+                 values_to = "base")
+
+# Paste together gene_27_names and the four TEAD genes to fill in zeros in table
+#
+
+tead_27 %>%
+    group_by(id, gene) %>%
+    summarize(n_hits = n(), .groups = "drop") %>%
+    full_join(tibble(gene = rep(genes_27_names$gene, 4),
+                     id = c(rep("TEAD1", nrow(genes_27_names)),
+                            rep("TEAD2", nrow(genes_27_names)),
+                            rep("TEAD3", nrow(genes_27_names)),
+                            rep("TEAD4", nrow(genes_27_names)))) %>%
+              distinct()) %>%
+    mutate(n_hits = ifelse(is.na(n_hits), 0, n_hits)) %>%
+    arrange(id, gene) %>%
+    write_tsv("output/promoters27/tead_27_genes_motif_counts.txt")
+
+for (tead_ver in c("TEAD1", "TEAD2", "TEAD3", "TEAD4")) {
+    plot_name <-
+        ggplot() +
+        geom_point(data = filter(long_tead_27, id == tead_ver),
+                   aes(x = hit_middle,
+                       y = gene),
+                  size = 3,
+                  color = "black",
+                  shape = 18) +
+        xlim(0, 2000) +
+        scale_color_brewer(palette = "Set1",
+                        name = "Strand") +
+        labs(x = "Promoter position",
+             y = "Gene",
+             title = paste(tead_ver, "Motifs in Promoters of Developmental Genes"))
+
+    ggsave(paste0("output/figures/", tead_ver, "_27_genes_promoter_locations.png"),
+            width = 8,
+            height = 5,
+            plot = plot_name)
+}
+```
 
 ## Count reads mapping across VGLL2-NCOA2 fusion junction
-```{r stuff, eval=FALSE}
+Make sure samtools is on the path before running this chunk.
+I used samtools v1.15
+```{r stuff, eval=TRUE}
+# Table with known juction locations for each sample
+breakpoint_list <-
+    list("VGLL2-NCOA2_x2_x13" = 597,
+         "VGLL2-NCOA2_x2_x14" = 597,
+         "VGLL2_NCOA2_x3_x14" = 1119,
+         "hVGLL2NCOA2_CDS"    = 391)
+
+fusion_list <-
+    list("EGAR00001508614_SARC061"           = c("VGLL2-NCOA2_x2_x13",
+                                                 "VGLL2-NCOA2_x2_x14"),
+         "EGAR00001508618_SARC065"           = c("VGLL2-NCOA2_x2_x14",
+                                                 "VGLL2_NCOA2_x3_x14"),
+         "EGAR00001508623_SARC070-Primary"   = c("VGLL2-NCOA2_x2_x13",
+                                                 "VGLL2-NCOA2_x2_x14"),
+         "EGAR00001508624_SARC070-Relapse1"  = c("VGLL2-NCOA2_x2_x13",
+                                                 "VGLL2-NCOA2_x2_x14"),
+         "EGAR00001508656_SARC102"           = c("VGLL2-NCOA2_x2_x13",
+                                                 "VGLL2-NCOA2_x2_x14"))
+
 get_data <- function(sample_name) {
-  filter_cmd <- paste0("cat output/fusionAligned/",
-                      sample_name,
-                      "Aligned.out.sam | grep NCOA | awk '$4 <= 341 && $8 >= 441 {print $_}'")
-  data_df <- system(filter_cmd, intern = TRUE) %>%
-    as.data.frame() %>%
-    separate(.,
-             col = `.`,
-             sep = "\t",
-             into = c(NA, NA, NA, "pos_1", "mapq", NA, "chr_2", "pos_2", NA, NA, NA, NA, NA, NA, NA)) %>%
-    filter(chr_2 == "=" &
-             mapq > 200) %>%
-    distinct()
-
-    if (nrow(data_df) > 0) {
-        plot_name <- data_df %>%
-            mutate(pos_1 = as.numeric(pos_1),
-                pos_2 = as.numeric(pos_2)) %>%
-            arrange(pos_1, pos_2) %>%
-            mutate(row_num = 1:n()) %>%
-            select(pos_1, pos_2, row_num) %>%
-            pivot_longer(cols = -row_num, names_to = "pos", values_to = "base") %>%
-            ggplot(aes(x = as.numeric(base), y = row_num, group = row_num)) +
-            geom_vline(xintercept = 391,
-                       color = "red") +
-            geom_point() +
-            geom_line() +
-            ggtitle(sample_name) +
-            labs(x = "Base", y = "")
-
-        print(plot_name)
+    if (sample_name %in% names(fusion_list)) {
+        breakpoints <- breakpoint_list[fusion_list[[sample_name]]]
+    } else {
+        breakpoints <- breakpoint_list["hVGLL2NCOA2_CDS"]
     }
 
-  return(data_df)
+    read_counts <- tibble(ref = rep(NA, length(breakpoints)),
+                          fusion_reads = rep(NA, length(breakpoints)),
+                          sample_name = rep(NA, length(breakpoints)))
+    for (i in seq_len(length(breakpoints))) {
+        buffer_size <- 25
+        upper_bound <- breakpoints[[i]] + buffer_size
+        lower_bound <- breakpoints[[i]] - buffer_size
+        filter_cmd <- paste0("samtools view output/fusionAligned/",
+                            sample_name,
+                            "Aligned.out.bam | grep ",
+                            names(breakpoints)[i],          # Get fusion chr
+                            " | awk '$4 <= ", lower_bound,  # Get pairs that flank the fusion point
+                            " && $8 >= ", upper_bound,
+                            " && $5 >= 200 && $7 == \"=\" {print $_}'", # Filter out poorly mapping and any where the mate mapped to another "chr"
+                            " | cut -f 1 | perlUnique.pl | wc -l") # Count number of unique read
+        read_counts$fusion_reads[i] <- as.numeric(system(filter_cmd, intern = TRUE))
+        read_counts$sample_name[i] <- sample_name
+        read_counts$ref[i] <- names(breakpoints)[i]
+    }
+    return(read_counts)
 }
 
-samples <- c("A377-A378T1",
-             "A377-A378T2",
-             "A377-A378T3",
-             "A377-A378T4",
-             "A377-A378T5",
-             "A377-A378T6",
-             "A377-A378T7",
-             "A377-A378T8")
+samples <- system("ls output/fusionAligned/*.bam", intern = TRUE) %>%
+    str_remove(".+/") %>%
+    str_remove("Aligned.out.bam")
 
 names(samples) <- samples
 
-pdf("output/figures/fusionMappedPos.pdf")
-fusion_mapped <- lapply(samples, function(x) get_data(x) %>% nrow())
-dev.off()
+fusion_mapped <- lapply(samples, function(x) get_data(x)) %>%
+    bind_rows()
 
-fusion_mapped <- tibble(fusion_count = as.numeric(fusion_mapped),
-                        sample_name = names(fusion_mapped))
-
-get_reads_cmd <- "grep 'Uniquely mapped reads number' output/aligned/*Log.final.out"
+get_reads_cmd <- "grep 'Uniquely mapped reads number' output/aligned/*/*Log.final.out"
 
 fusion_data <- tibble(data_in = system(get_reads_cmd, intern = TRUE)) %>%
     separate(data_in,
              sep = "\t",
              into = c("sample_name", "reads_mapped")) %>%
     mutate(sample_name = sample_name %>%
-                str_remove("output/aligned/") %>%
+                str_remove(".+/") %>%
                 str_remove("Log.final.out:.+"),
                 reads_mapped = as.numeric(reads_mapped),
            M_reads_mapped = reads_mapped / 1000000) %>%
-    full_join(fusion_mapped,
+    right_join(fusion_mapped,
               by = "sample_name") %>%
-    mutate(fusions_per_M = fusion_count / M_reads_mapped) %>%
-    select(-M_reads_mapped)
+    mutate(fusions_per_M = fusion_reads / M_reads_mapped) %>%
+    select(-M_reads_mapped) %>%
+    left_join(read_tsv("misc/sampleMetadata.txt",
+                       show_col_types = FALSE) %>%
+                select(sample, group, description) %>%
+                rename(sample_name = sample))
 
 fusion_data %>%
     gt::gt() %>%
     gt::fmt_number(columns = 2, decimals = 0, sep_mark = ",") %>%
-    gt::fmt_number(columns = 4, decimals = 2) %>%
+    gt::fmt_number(columns = 5, decimals = 2) %>%
     gt::cols_label(sample_name = "Sample",
                    reads_mapped = "Reads Mapped",
-                   fusion_count = "Fusions Detected",
-                   fusions_per_M = md("Fusions per Million Reads")) %>%
+                   fusion_reads = "Fusions Detected",
+                   ref = "Fusion",
+                   fusions_per_M = md("Fusions/Million Reads"),
+                   group = "Group",
+                   description = "Description") %>%
     gt::cols_width(fusions_per_M ~ px(125),
-                   fusion_count ~ px(100)) %>%
+                   fusion_reads ~ px(100)) %>%
     gt::gtsave(file = "output/figures/fusionsMapped.png")
 
+ggplot(fusion_data, aes(x = group, y = fusions_per_M + 1)) +
+    ggbeeswarm::geom_beeswarm(cex = 2) +
+    labs(x = "",
+         y = "Fusions per million mapped reads",
+         title = "Comparison of VGLL2-NCOA2 Fusion Expression") +
+    scale_y_log10()
+
+ggsave("output/figures/fusionExpression.png")
 ```
 
 ## Testing for correlation between fusion counts and gene expression of up-regulated genes
@@ -1636,261 +2229,16 @@ names(test) <- colnames(de_results)[5:ncol(de_results)]
 
 ```
 
+```{r sessionInfo}
+sessionInfo()
+```
+
 ## AGDEX analysis
 Keep this chunk last in the analysis since it borks my namespace >:(
 
 Compare:
 -   VGLL2NCOA2 human and fish tumors vs. mature skeletal muscle
--   VGLL2NCOA2 human and fish tumors vs. KRAS driven RMS 
--   Mouse VGLL2NCOA2 and fish tumors vs. mature skeletal muscle 
-```{r agdex, eval=TRUE}
-# Need data frame with rownames equal to the column names for the gene expression data
-# and columns showing the groups
-library(Biobase)
-library(AGDEX)
-cmp_table <- tibble(group_1 = c("DrFusion_DrSkMu",
-                                "DrFusion_DrSkMu",
-                                "DrFusion_DrSkMu",
-                                "HsFusion_HsSkMu",
-                                "HsFusion_HsSkMu"),
-                    group_2 = c("HsFusion_HsSkMu",
-                                "MmFusion_MmSkMu",
-                                "DrKras_DrKrasCtrl",
-                                "DrKras_DrKrasCtrl",
-                                "MmFusion_MmSkMu"))
-
-species_full <- list(Hs = "Homo sapiens",
-                     Dr = "Danio rerio",
-                     Mm = "Mus musculus")
-
-for (i in seq_len(nrow(cmp_table))) {
-    comparison_1 <- cmp_table$group_1[i]
-    comparison_2 <- cmp_table$group_2[i]
-    species_1 <- species_full[[substr(comparison_1, 1, 2)]]
-    species_2 <- species_full[[substr(comparison_2, 1, 2)]]
-
-    if (species_1 != species_2) {
-        # get homologs
-        orthologs <- read_tsv("../refs/ORTHOLOGY-ALLIANCE_COMBINED.tsv.gz",
-                        show_col_types = FALSE,
-                        comment = "#") %>%
-            dplyr::filter(Gene1SpeciesName == species_1 &
-                        Gene2SpeciesName == species_2) %>%
-            dplyr::select(group_1_gene = Gene1Symbol,
-                        group_2_gene = Gene2Symbol) %>%
-            distinct()
-    } else {
-        orthologs <- read_tsv("../refs/ORTHOLOGY-ALLIANCE_COMBINED.tsv.gz",
-                        show_col_types = FALSE,
-                        comment = "#") %>%
-            dplyr::filter(Gene1SpeciesName == species_1) %>%
-            dplyr::select(group_1_gene = Gene1Symbol,
-                        group_2_gene = Gene1Symbol) %>%
-            distinct()
-    }
-
-    # Get normalized data
-    data_1 <- read_tsv(paste0("output/de/",
-                              cmp_table$group_1[i],
-                              "_edgeR.txt"),
-                       show_col_types = FALSE) %>%
-        dplyr::select(-matches("_mean"),
-               -logFC,
-               -logCPM,
-               -PValue,
-               -FDR,
-               -signif) %>%
-        dplyr::filter(Gene %in% orthologs$group_1_gene) %>%
-        column_to_rownames("Gene")
-
-    data_2 <- read_tsv(paste0("output/de/",
-                              cmp_table$group_2[i],
-                              "_edgeR.txt"),
-                       show_col_types = FALSE) %>%
-        dplyr::select(-matches("_mean"),
-               -logFC,
-               -logCPM,
-               -PValue,
-               -FDR,
-               -signif) %>%
-        dplyr::filter(Gene %in% orthologs$group_2_gene) %>%
-        column_to_rownames("Gene")
-
-    group_1_pheno = data.frame(row.names = colnames(data_1),
-                            grp = readRDS(paste0("output/de/",
-                                            comparison_1,
-                                            "_groups.rds")))
-
-    group_2_pheno = data.frame(row.names = colnames(data_2),
-                            grp = readRDS(paste0("output/de/",
-                                            comparison_2,
-                                            "_groups.rds")))
-
-    # Do de testing on each dataset
-    group_1_dex_set <-
-        make.dex.set.object(
-            Eset.data = ExpressionSet(assayData = as.matrix(data_1),
-                                      phenoData = AnnotatedDataFrame(group_1_pheno)),
-            comp.var = "grp",
-            comp.def = str_replace(comparison_1, "_", "-"),
-            gset.collection = NULL)
-
-    group_2_dex_set <-
-        make.dex.set.object(
-            Eset.data = ExpressionSet(assayData = as.matrix(data_2),
-                                      phenoData = AnnotatedDataFrame(group_2_pheno)),
-            comp.var = "grp",
-            comp.def = str_replace(comparison_2, "_", "-"),
-            gset.collection = NULL)
-
-    # Make up list of map.data
-
-    map_data <- list(probe.map = orthologs,
-                     map.Aprobe.col = 1,
-                     map.Bprobe.col = 2)
-
-    # Run agdex
-    agdex_res <- AGDEX::agdex(dex.setA = group_1_dex_set,
-                              dex.setB = group_2_dex_set,
-                              map.data = map_data,
-                              min.nperms = 5000,
-                              max.nperms = 10000)
-
-    write_tsv(agdex_res$gwide.agdex.result,
-                file = paste0("output/agdex/",
-                              comparison_1,
-                              "_vs_",
-                              comparison_2,
-                              ".txt"))
-
-    png(paste0("output/agdex/",
-                  comparison_1,
-                  "_vs_",
-                  comparison_2,
-                  ".png"),
-           width = 3000,
-           height = 3000,
-           res = 300)
-    agdex.scatterplot(agdex_res)
-    dev.off()
-
-    merged_results <-
-        read_tsv(paste0("output/de/",
-                    cmp_table$group_1[i],
-                    "_edgeR.txt"),
-             show_col_types = FALSE) %>%
-        dplyr::select(Gene,
-                      logFC,
-                      signif) %>%
-        dplyr::filter(Gene %in% orthologs$group_1_gene) %>%
-        dplyr::rename(group_1_gene = Gene,
-                      g1_logfc = logFC,
-                      g1_signif = signif) %>%
-        left_join(orthologs, by = "group_1_gene") %>%
-        inner_join(read_tsv(paste0("output/de/",
-                                   cmp_table$group_2[i],
-                                   "_edgeR.txt"),
-                            show_col_types = FALSE) %>%
-            dplyr::select(Gene,
-                          matches("_mean"),
-                          logFC,
-                          signif) %>%
-            dplyr::filter(Gene %in% orthologs$group_2_gene) %>%
-            dplyr::rename(group_2_gene = Gene,
-                          g2_logfc = logFC,
-                          g2_signif = signif) %>%
-            left_join(orthologs)) %>%
-        mutate(signif = paste(g1_signif, g2_signif),
-               direction = if_else(g1_logfc > 0 & g2_logfc > 0,
-                                   "up",
-                                   if_else(g1_logfc < 0 & g2_logfc < 0,
-                                            "down",
-                                            "discordant"))) %>%
-        group_by(direction) %>%
-        mutate(direction = str_c(direction, " (", n(), ")"))
-
-    lm_test <- lm(g2_logfc ~ g1_logfc, data = merged_results) %>%
-        summary()
-
-    cor_test <- cor.test(merged_results$g1_logfc,
-                         merged_results$g2_logfc,
-                         method = "pearson")
-
-    # Calculate the proportion of genes are in the upper right and lower left of the plot
-    prop_q2_q3 <- sum((merged_results$g1_logfc > 0 &
-                        merged_results$g2_logfc > 0) |
-                   (merged_results$g1_logfc < 0 &
-                        merged_results$g2_logfc < 0)) / nrow(merged_results)
-
-    # Permute over random samples from kernal density function
-    g1_density <- density(merged_results$g1_logfc, n = 2000)
-    g2_density <- density(merged_results$g2_logfc, n = 2000)
-    n_perm <- 100000
-    n_perm_higher <- 0
-    for (i in seq_len(n_perm)) {
-        g1_perm <- sample(g1_density$x,
-                        nrow(merged_results),
-                        prob = g1_density$y,
-                        replace = TRUE) +
-            rnorm(nrow(merged_results), 0, g1_density$bw)
-
-        g2_perm <- sample(g2_density$x,
-                        nrow(merged_results),
-                        prob = g2_density$y,
-                        replace = TRUE) +
-            rnorm(nrow(merged_results), 0, g1_density$bw)
-
-        perm_prop <- sum((g1_perm > 0 & g2_perm > 0) |
-                            (g1_perm < 0 & g2_perm < 0)) /
-                            nrow(merged_results)
-
-        if (perm_prop >= prop_q2_q3) {
-            n_perm_higher <- n_perm_higher + 1
-        }
-
-        if (i %% 1000 == 0) {
-            message("permutation: ", i)
-        }
-    }
-
-    perm_p <- n_perm_higher/ n_perm
-    if (perm_p == 0) {
-        perm_p <- paste0("<", 1/n_perm)
-    }
-
-    ggplot(merged_results, aes(x = g1_logfc,
-                               y = g2_logfc,
-                               color = direction)) +
-        geom_point(alpha = 0.4, size = 1) +
-        labs(x = comparison_1,
-             y = comparison_2,
-             title = paste0(comparison_1,
-                            " vs ",
-                            comparison_2,
-                            "\nSlope:",
-                            round(lm_test$coefficients[2], digits =2),
-                            ", R-squared:",
-                            round(lm_test$r.squared, digits = 2),
-                            "\nPearson: ",
-                            round(cor_test$estimate, digits = 2),
-                            ", p-value: ",
-                            sprintf("%.2e", cor_test$p.value),
-                            "\nPerm p-value: ",
-                            perm_p)) +
-        scale_color_manual(values = c("gray",
-                                      "#2D2DE5",
-                                      "#D32821"),
-                           name = "Direction") +
-        geom_smooth(method = "lm",
-                    color = "black",
-                    se = FALSE)
-
-    ggsave(paste0("output/agdex/",
-                  comparison_1,
-                  "_vs_",
-                  comparison_2,
-                  "_raw_data.png"),
-           height = 8,
-           width = 10)
-}
+-   VGLL2NCOA2 human and fish tumors vs. KRAS driven RMS
+-   Mouse VGLL2NCOA2 and fish tumors vs. mature skeletal muscle
+```{r agdex, child='agdex_child.Rmd', eval=TRUE}
 ```
