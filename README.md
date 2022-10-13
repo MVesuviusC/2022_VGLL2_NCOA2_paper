@@ -1,11 +1,11 @@
 # Analysis for "VGLL2-NCOA2 leverages developmental programs for pediatric sarcomagenesis"
 
 <p align="center">
-  <img src="./misc/KendallLogo.jpg"/>
+  <img width="250" height="250" src="./misc/KendallLogo.jpg"/>
 </p>
 
 <p align="center">
-  <img src="./misc/KendallLogoLetters.jpg"/>
+  <img width="500" src="./misc/KendallLogoLetters.jpg"/>
 </p>
 
 This is code in support of the manuscript "VGLL2-NCOA2 leverages developmental programs for pediatric sarcomagenesis" by Sarah Watson et al.
