@@ -1,0 +1,309 @@
+---
+title: "Arf6 mouse tumor RNAseq experiment - agdex child"
+author: "Matt Cannon"
+date: "03-02-2022"
+output: knitrBootstrap::bootstrap_document
+---
+
+```{r setupchild, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      cache = TRUE)
+```
+
+
+## Load libraries
+```{r librarieschild, cache=FALSE, eval=TRUE}
+library(tidyverse)
+theme_set(theme_bw())
+theme_update(plot.title = element_text(hjust = 0.5))
+options(bitmaptype = "cairo")
+library(gt)
+library(edgeR)
+```
+
+## AGDEX analysis
+Keep this chunk last in the analysis since it borks my namespace >:(
+
+Compare:
+-   VGLL2NCOA2 human and fish tumors vs. mature skeletal muscle
+-   VGLL2NCOA2 human and fish tumors vs. KRAS driven RMS 
+-   Mouse VGLL2NCOA2 and fish tumors vs. mature skeletal muscle 
+```{r agdex, eval=TRUE}
+# Need data frame with rownames equal to the column names for the gene expression data
+# and columns showing the groups
+library(Biobase)
+library(AGDEX)
+cmp_table <- tibble(group_1 = c("DrSkMu_DrFusion",
+                                "DrSkMu_DrFusion",
+                                "DrSkMu_DrFusion",
+                                "HsSkMu_HsFusion",
+                                "HsSkMu_HsFusion"),
+                    group_2 = c("HsSkMu_HsFusion",
+                                "MmSkMu_MmFusion",
+                                "DrKrasCtrl_DrKras",
+                                "DrKrasCtrl_DrKras",
+                                "MmSkMu_MmFusion"))
+
+species_full <- list(Hs = "Homo sapiens",
+                     Dr = "Danio rerio",
+                     Mm = "Mus musculus")
+
+quantile_numbers <- tibble(comparison = character())
+
+for (i in seq_len(nrow(cmp_table))) {
+    comparison_1 <- cmp_table$group_1[i]
+    comparison_2 <- cmp_table$group_2[i]
+    species_1 <- species_full[[substr(comparison_1, 1, 2)]]
+    species_2 <- species_full[[substr(comparison_2, 1, 2)]]
+
+    if (species_1 != species_2) {
+        # get homologs
+        orthologs <- read_tsv("../refs/ORTHOLOGY-ALLIANCE_COMBINED.tsv.gz",
+                        show_col_types = FALSE,
+                        comment = "#") %>%
+            dplyr::filter(Gene1SpeciesName == species_1 &
+                        Gene2SpeciesName == species_2) %>%
+            dplyr::select(group_1_gene = Gene1Symbol,
+                        group_2_gene = Gene2Symbol) %>%
+            distinct()
+    } else {
+        orthologs <- read_tsv("../refs/ORTHOLOGY-ALLIANCE_COMBINED.tsv.gz",
+                        show_col_types = FALSE,
+                        comment = "#") %>%
+            dplyr::filter(Gene1SpeciesName == species_1) %>%
+            dplyr::select(group_1_gene = Gene1Symbol,
+                        group_2_gene = Gene1Symbol) %>%
+            distinct()
+    }
+
+    # Get normalized data
+    data_1 <- read_tsv(paste0("output/de/",
+                              cmp_table$group_1[i],
+                              "_edgeR.txt"),
+                       show_col_types = FALSE) %>%
+        dplyr::select(-matches("_mean"),
+                      -matches("Gene_stable_ID"),
+                      -logFC,
+                      -logCPM,
+                      -PValue,
+                      -FDR,
+                      -signif) %>%
+        dplyr::distinct() %>%
+        dplyr::filter(Gene %in% orthologs$group_1_gene) %>%
+        column_to_rownames("Gene")
+
+    data_2 <- read_tsv(paste0("output/de/",
+                              cmp_table$group_2[i],
+                              "_edgeR.txt"),
+                       show_col_types = FALSE) %>%
+        dplyr::select(-matches("_mean"),
+                      -matches("Gene_stable_ID"),
+                      -logFC,
+                      -logCPM,
+                      -PValue,
+                      -FDR,
+                      -signif) %>%
+        dplyr::distinct() %>%
+        dplyr::filter(Gene %in% orthologs$group_2_gene) %>%
+        column_to_rownames("Gene")
+
+    group_1_pheno <- data.frame(row.names = colnames(data_1),
+                                grp = readRDS(paste0("output/de/",
+                                                     comparison_1,
+                                                     "_groups.rds")))
+
+    group_2_pheno <- data.frame(row.names = colnames(data_2),
+                                grp = readRDS(paste0("output/de/",
+                                                     comparison_2,
+                                                     "_groups.rds")))
+
+    # Do de testing on each dataset
+    group_1_dex_set <-
+        make.dex.set.object(
+            Eset.data = ExpressionSet(assayData = as.matrix(data_1),
+                                      phenoData = AnnotatedDataFrame(group_1_pheno)),
+            comp.var = "grp",
+            comp.def = str_replace(comparison_1, "_", "-"),
+            gset.collection = NULL)
+
+    group_2_dex_set <-
+        make.dex.set.object(
+            Eset.data = ExpressionSet(assayData = as.matrix(data_2),
+                                      phenoData = AnnotatedDataFrame(group_2_pheno)),
+            comp.var = "grp",
+            comp.def = str_replace(comparison_2, "_", "-"),
+            gset.collection = NULL)
+
+    # Make up list of map.data
+
+    map_data <- list(probe.map = orthologs,
+                     map.Aprobe.col = 1,
+                     map.Bprobe.col = 2)
+
+    # Run agdex
+    agdex_res <- AGDEX::agdex(dex.setA = group_1_dex_set,
+                              dex.setB = group_2_dex_set,
+                              map.data = map_data,
+                              min.nperms = 5000,
+                              max.nperms = 10000)
+
+    write_tsv(agdex_res$gwide.agdex.result,
+                file = paste0("output/agdex/",
+                              comparison_1,
+                              "_vs_",
+                              comparison_2,
+                              ".txt"))
+
+    png(paste0("output/agdex/",
+                  comparison_1,
+                  "_vs_",
+                  comparison_2,
+                  ".png"),
+           width = 3000,
+           height = 3000,
+           res = 300)
+    agdex.scatterplot(agdex_res)
+    dev.off()
+
+    merged_results <-
+        read_tsv(paste0("output/de/",
+                    cmp_table$group_1[i],
+                    "_edgeR.txt"),
+             show_col_types = FALSE) %>%
+        dplyr::select(Gene,
+                      logFC,
+                      signif) %>%
+        dplyr::filter(Gene %in% orthologs$group_1_gene) %>%
+        dplyr::rename(group_1_gene = Gene,
+                      g1_logfc = logFC,
+                      g1_signif = signif) %>%
+        distinct() %>%
+        left_join(orthologs, by = "group_1_gene") %>%
+        inner_join(read_tsv(paste0("output/de/",
+                                   cmp_table$group_2[i],
+                                   "_edgeR.txt"),
+                            show_col_types = FALSE) %>%
+            dplyr::select(Gene,
+                          matches("_mean"),
+                          logFC,
+                          signif) %>%
+            dplyr::filter(Gene %in% orthologs$group_2_gene) %>%
+            dplyr::rename(group_2_gene = Gene,
+                          g2_logfc = logFC,
+                          g2_signif = signif) %>%
+            distinct() %>%
+            left_join(orthologs)) %>%
+        mutate(signif = paste(g1_signif, g2_signif),
+               direction = if_else(g1_logfc > 0 & g2_logfc > 0,
+                                   "up",
+                                   if_else(g1_logfc < 0 & g2_logfc < 0,
+                                            "down",
+                                            "discordant"))) %>%
+        group_by(direction) %>%
+        mutate(direction = str_c(direction, " (", n(), ")"))
+
+    lm_test <- lm(g2_logfc ~ g1_logfc, data = merged_results) %>%
+        summary()
+
+    cor_test <- cor.test(merged_results$g1_logfc,
+                         merged_results$g2_logfc,
+                         method = "pearson")
+
+    # Calculate proportion in each quadrant
+    quantile_numbers <- bind_rows(
+        tibble(comparison = paste0(comparison_1,
+                                   " vs ",
+                                   comparison_2),
+           upper_left = sum((merged_results$g1_logfc > 0 &
+                                merged_results$g2_logfc < 0)),
+           upper_right = sum((merged_results$g1_logfc > 0 &
+                                merged_results$g2_logfc > 0)),
+           lower_left = sum((merged_results$g1_logfc < 0 &
+                                merged_results$g2_logfc < 0)),
+           lower_right = sum((merged_results$g1_logfc < 0 &
+                                merged_results$g2_logfc > 0))),
+        quantile_numbers)
+
+    # Calculate the proportion of genes are in the upper right and lower left of the plot
+    prop_q2_q3 <- sum((merged_results$g1_logfc > 0 &
+                        merged_results$g2_logfc > 0) |
+                   (merged_results$g1_logfc < 0 &
+                        merged_results$g2_logfc < 0)) / nrow(merged_results)
+
+    # Permute over random samples from kernal density function
+    g1_density <- density(merged_results$g1_logfc, n = 2000)
+    g2_density <- density(merged_results$g2_logfc, n = 2000)
+    n_perm <- 100000
+    n_perm_higher <- 0
+    for (i in seq_len(n_perm)) {
+        g1_perm <- sample(g1_density$x,
+                        nrow(merged_results),
+                        prob = g1_density$y,
+                        replace = TRUE) +
+            rnorm(nrow(merged_results), 0, g1_density$bw)
+
+        g2_perm <- sample(g2_density$x,
+                        nrow(merged_results),
+                        prob = g2_density$y,
+                        replace = TRUE) +
+            rnorm(nrow(merged_results), 0, g1_density$bw)
+
+        perm_prop <- sum((g1_perm > 0 & g2_perm > 0) |
+                            (g1_perm < 0 & g2_perm < 0)) /
+                            nrow(merged_results)
+
+        if (perm_prop >= prop_q2_q3) {
+            n_perm_higher <- n_perm_higher + 1
+        }
+
+        if (i %% 1000 == 0) {
+            message("permutation: ", i)
+        }
+    }
+
+    perm_p <- n_perm_higher/ n_perm
+    if (perm_p == 0) {
+        perm_p <- paste0("<", 1 / n_perm)
+    }
+
+    ggplot(merged_results, aes(x = g1_logfc,
+                               y = g2_logfc,
+                               color = direction)) +
+        geom_point(alpha = 0.4, size = 1) +
+        labs(x = comparison_1,
+             y = comparison_2,
+             title = paste0(comparison_1,
+                            " vs ",
+                            comparison_2,
+                            "\nSlope:",
+                            round(lm_test$coefficients[2], digits =2),
+                            ", R-squared:",
+                            round(lm_test$r.squared, digits = 2),
+                            "\nPearson: ",
+                            round(cor_test$estimate, digits = 2),
+                            ", p-value: ",
+                            sprintf("%.2e", cor_test$p.value),
+                            "\nPerm p-value: ",
+                            perm_p)) +
+        scale_color_manual(values = c("gray",
+                                      "#2D2DE5",
+                                      "#D32821"),
+                           name = "Direction") +
+        geom_smooth(method = "lm",
+                    color = "black",
+                    se = FALSE)
+
+    ggsave(paste0("output/agdex/",
+                  comparison_1,
+                  "_vs_",
+                  comparison_2,
+                  "_raw_data.pdf"),
+           height = 8,
+           width = 10)
+}
+write_tsv(quantile_numbers, file = "output/agdex/quantileNumbers.txt")
+```
+
+```{r sessionInfochild}
+sessionInfo()
+```
